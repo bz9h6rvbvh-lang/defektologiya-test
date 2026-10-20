@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Defektologiya natijalari</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-screen quiz stage — top bar with progress/timer, question card, 2x2 answer tiles. Single committed dark "game hall" look. */
+:root{
+  --bg:#141a2e; --bg2:#1d2541; --panel:#232c4d; --line:#34406b;
+  --fg:#f4f2ff; --muted:#a6aed0; --accent:#ffd43b;
+  --a:#e5484d; --b:#2f80ed; --c:#f2a516; --d:#2fa35a;
+  --ok:#2fa35a; --bad:#e5484d;
+  --display:"Unbounded",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45}
+.wrap{min-height:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px;
+  padding-block:20px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box}
+h1,h2{font-family:var(--display);text-wrap:balance;margin:0}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+/* start */
+.hero{display:flex;flex-direction:column;gap:14px;padding-top:4vh}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.hero h1{font-size:clamp(30px,8vw,52px);font-weight:900;line-height:1.05}
+.hero p{color:var(--muted);margin:0;max-width:52ch}
+.facts{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;color:var(--muted)}
+.chip b{color:var(--fg)}
+.join{display:flex;flex-direction:column;gap:10px;background:var(--panel);border-radius:18px;padding:18px;margin-top:6px}
+.join label{font-weight:600;font-size:14px;color:var(--muted)}
+.join input{font:600 20px var(--body);padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--fg);width:100%;box-sizing:border-box}
+.big{font:700 18px var(--display);padding:16px 20px;border:0;border-radius:14px;background:var(--accent);color:#1a1400;box-shadow:0 5px 0 #b8941a}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 #b8941a}
+.big:disabled{opacity:.45;cursor:not-allowed}
+.hint{font-size:13px;color:var(--muted)}
+
+/* play */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+.qnum{font:700 15px var(--display)}
+.score{font-weight:700;background:var(--bg2);border-radius:999px;padding:6px 12px}
+.timer{position:relative;height:10px;background:var(--bg2);border-radius:99px;overflow:hidden}
+.timer i{position:absolute;inset:0 auto 0 0;width:100%;background:var(--accent);border-radius:99px;transition:width .25s linear}
+.timer.low i{background:var(--bad)}
+.secs{font:900 28px var(--display);text-align:center;font-variant-numeric:tabular-nums}
+.qcard{background:var(--fg);color:#141a2e;border-radius:18px;padding:22px 20px;font:600 clamp(19px,4.6vw,24px)/1.3 var(--body);text-wrap:balance;min-height:90px;display:flex;align-items:center}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.answers{grid-template-columns:1fr}}
+.ans{display:flex;align-items:center;gap:12px;text-align:left;border:0;border-radius:14px;padding:16px 14px;min-height:72px;color:#fff;font:600 16px/1.3 var(--body);box-shadow:0 5px 0 rgba(0,0,0,.35);transition:opacity .2s,transform .1s}
+.ans:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.ans span{min-width:0}
+.ans svg{flex:none;width:28px;height:28px;fill:#fff}
+.ans[data-k="A"]{background:var(--a)} .ans[data-k="B"]{background:var(--b)}
+.ans[data-k="C"]{background:var(--c)} .ans[data-k="D"]{background:var(--d)}
+.ans.dim{opacity:.28}
+.ans.right{outline:4px solid #fff;outline-offset:-4px}
+.ans:disabled{cursor:default}
+.feedback{border-radius:14px;padding:14px 16px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.feedback.ok{background:var(--ok)} .feedback.bad{background:var(--bad)}
+.feedback button{font:700 15px var(--body);border:0;border-radius:10px;padding:10px 16px;background:#fff;color:#141a2e}
+
+/* end */
+.result{background:var(--panel);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px;text-align:center}
+.result .pts{font:900 clamp(44px,13vw,72px) var(--display);color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.result .who{font:700 20px var(--display)}
+.result .sub{color:var(--muted)}
+.grade{align-self:center;background:var(--bg);border-radius:999px;padding:6px 14px;font-weight:700}
+.sec h2{font-size:17px;margin-bottom:10px}
+.board{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.board li{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;background:var(--bg2);border-radius:12px;padding:10px 14px;font-variant-numeric:tabular-nums}
+.board li.me{background:var(--line);outline:2px solid var(--accent)}
+.board .rk{font:700 15px var(--display);color:var(--muted)}
+.board li:nth-child(1) .rk{color:var(--accent)}
+.board .nm{min-width:0;overflow-wrap:anywhere;font-weight:600}
+.board .pt{font-weight:700}
+.board .ct{font-size:12px;color:var(--muted);font-weight:500}
+.note{background:var(--bg2);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;color:var(--muted);font-size:14px}
+.review{display:flex;flex-direction:column;gap:8px}
+.rv{background:var(--bg2);border-radius:12px;padding:12px 14px;border-left:4px solid var(--bad)}
+.rv p{margin:0 0 4px;font-weight:600}
+.rv small{color:var(--muted);display:block}
+.rv small b{color:var(--ok)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.ghost{font:600 15px var(--body);border:2px solid var(--line);background:transparent;color:var(--fg);border-radius:12px;padding:12px 16px}
+.codebox{background:var(--bg2);border:2px solid var(--accent);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.codebox code{font:600 13px/1.4 ui-monospace,Menlo,Consolas,monospace;word-break:break-all;user-select:all;color:var(--fg)}
+.codebox .row button{flex:1}
+.copy{font:700 15px var(--body);border:0;border-radius:10px;padding:12px 16px;background:var(--accent);color:#1a1400}
+.admin textarea{width:100%;box-sizing:border-box;min-height:110px;font:500 13px ui-monospace,Menlo,Consolas,monospace;padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--bg2);border-radius:12px;padding:12px;font-variant-numeric:tabular-nums}
+.stat b{display:block;font:900 24px var(--display);color:var(--accent)}
+.stat span{font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.tbl th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px 8px;border-bottom:1px solid var(--line)}
+.tbl td.nm{overflow-wrap:anywhere}
+.src{font-size:11px;color:var(--muted)}
+.msg{font-size:14px;color:var(--muted)}
+.msg.err{color:#ff8b8e}
+.danger{border-color:var(--bad);color:#ff8b8e}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.clock{font:900 22px var(--display);font-variant-numeric:tabular-nums;background:var(--bg2);border-radius:999px;padding:6px 14px}
+.clock.low{background:var(--bad)}
+.dots{display:flex;flex-wrap:wrap;gap:5px}
+.dots i{width:14px;height:6px;border-radius:9px;background:var(--bg2)}
+.dots i.ok{background:var(--ok)} .dots i.bad{background:var(--bad)} .dots i.now{background:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const QUESTIONS = [
+ ["Defektologiya fani nimani o‘rganadi?",["Faqat sog‘lom bolalar tarbiyasini","Rivojlanishida turli o‘ziga xosliklari bo‘lgan shaxslarni o‘qitish va tarbiyalashni","Faqat kattalar psixologiyasini","Tabiat hodisalarini"],"B"],
+ ["“Defektologiya” atamasi qaysi tushunchalar bilan bog‘liq?",["Ta’lim va sport","Tibbiyot va kimyo","Rivojlanishdagi nuqsonlarni o‘rganish va korreksion pedagogika","Iqtisodiyot va huquq"],"C"],
+ ["Qadimgi davrlarda nogironligi bo‘lgan insonlarga munosabat qanday bo‘lgan?",["Hamma joyda bir xil va ijobiy","Ko‘pincha salbiy va kamsituvchi","Faqat ilmiy asoslangan","Faqat kasbiy ta’limga yo‘naltirilgan"],"B"],
+ ["Eshitishida nuqsoni bo‘lgan bolalarni o‘qitish tarixida muhim o‘rin tutgan pedagog kim?",["Pedro Ponce de León","Isaak Nyuton","Charlz Darvin","Albert Eynshteyn"],"A"],
+ ["Pedro Ponce de León asosan qaysi yo‘nalishda tarixda tanilgan?",["Ko‘r bolalarni o‘qitish","Eshitmaydigan bolalarni o‘qitish","Jismoniy tarbiya","Matematika"],"B"],
+ ["Ko‘zi ojiz insonlar ta’limi tarixida muhim ahamiyatga ega bo‘lgan Brayl yozuvini kim yaratgan?",["Jan Itar","Lui Brayl","Eduard Segan","Mariya Montessori"],"B"],
+ ["Lui Brayl yozuvi nimaga asoslangan?",["Rangli belgilar","Tovushli signallar","Barmoqlar bilan seziladigan bo‘rtma nuqtalar","Rasmlar"],"C"],
+ ["Jan-Marc Gaspard Itar qaysi ish bilan mashhur?",["Yovvoyi bola Viktor bilan olib borgan ta’limiy ishlari","Brayl yozuvini yaratgani","Birinchi universitetni ochgani","Eshitish apparatini yaratgani"],"A"],
+ ["Eduard Segan qaysi sohaning rivojlanishiga hissa qo‘shgan?",["Maxsus ta’lim va intellektual rivojlanishida qiyinchiliklari bo‘lgan bolalar ta’limi","Astronomiya","Geografiya","Bank ishi"],"A"],
+ ["Mariya Montessori pedagogikasi nimaga alohida e’tibor beradi?",["Faqat yodlashga","Bolaning mustaqilligi va individual rivojlanishiga","Faqat jismoniy mashqlarga","Faqat imtihonlarga"],"B"],
+ ["Defektologiyaning rivojlanishida XIX asr qanday ahamiyatga ega?",["Maxsus ta’lim muassasalari va usullarining rivojlanishi kuchaydi","Ta’lim butunlay to‘xtadi","Barcha maxsus maktablar yopildi","Faqat oliy ta’lim rivojlandi"],"A"],
+ ["Defektologiyaning zamonaviy rivojlanishida qaysi yondashuv muhim?",["Bolalarni ta’limdan chetlatish","Barcha bolalarga bir xil talab qo‘yish","Inklyuziv ta’lim va individual yondashuv","Faqat tibbiy davolash"],"C"],
+ ["Inklyuziv ta’limning asosiy maqsadi nima?",["Ayrim bolalarni alohida cheklash","Barcha bolalar uchun teng ta’lim imkoniyatini yaratish","Faqat iqtidorli bolalarni o‘qitish","Ta’lim muddatini qisqartirish"],"B"],
+ ["Hozirgi pedagogikada “defektologiya” bilan bog‘liq keng qo‘llanadigan atamalardan biri qaysi?",["Maxsus pedagogika","Geologiya","Menejment","Astronomiya"],"A"],
+ ["Maxsus pedagogikaning asosiy vazifalaridan biri nima?",["Bolalarni jamiyatdan ajratish","Rivojlanish xususiyatlarini hisobga olib ta’lim va tarbiyani tashkil etish","Faqat tashxis qo‘yish","Faqat nazariy ma’lumot berish"],"B"]
+];
+const PER = 30, KEYS = ["A","B","C","D"];
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const SALT = "dfk-trast-2026";
+function hsh(s){ let h = 2166136261; for (const c of s + SALT){ h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h>>>0).toString(36); }
+function fmt(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0"); }
+function grade(c, t){ const p = c/(t||QUESTIONS.length); return p>=.9 ? "A’lo" : p>=.7 ? "Yaxshi" : p>=.5 ? "Qoniqarli" : "Yana takrorlang"; }
+function lsGet(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : v; } catch(e){ return d; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+
+function parseCodes(text){
+  const ok = [], bad = [];
+  for (const m of text.matchAll(/DFK\.([A-Za-z0-9_-]+)\.([0-9a-z]+)/g)){
+    try {
+      let b = m[1].replace(/-/g,"+").replace(/_/g,"/"); while (b.length % 4) b += "=";
+      const p = decodeURIComponent(escape(atob(b)));
+      const [name, correct, total, secs, ts] = p.split("|");
+      if (hsh(p) !== m[2] || +correct > +total || +secs > PER*(+total)) throw 0;
+      ok.push({ key:m[2], name, correct:+correct, total:+total, secs:+secs, ts:+ts, code:m[0] });
+    } catch(e){ bad.push(m[0]); }
+  }
+  return { ok, bad };
+}
+let codes = []; try { codes = JSON.parse(lsGet("dfk_codes","[]")); } catch(e){ codes = []; }
+
+app.innerHTML = `
+<section class="admin" style="display:flex;flex-direction:column;gap:18px">
+  <span class="eyebrow">Admin panel</span>
+  <h1 style="font-size:clamp(24px,6vw,34px)">Defektologiya testi natijalari</h1>
+  <div class="stats" id="st"></div>
+  <div class="join">
+    <label for="paste">Kursdoshlardan kelgan kodlarni shu yerga tashlang</label>
+    <textarea id="paste" placeholder="DFK.xxxx.xxxx — bir nechta kodni yoki butun Telegram xabarini birdan tashlash mumkin"></textarea>
+    <button class="big" id="add">Natijalarni qo‘shish</button>
+    <span class="msg" id="msg" aria-live="polite"></span>
+  </div>
+  <section class="sec"><h2>Reyting</h2><div class="tbl" id="tb"></div></section>
+  <div class="row" id="clr"></div>
+  <p class="hint">Natijalar shu telefon yoki kompyuter brauzerida saqlanadi. Boshqa qurilmada ochsangiz, kodlarni qaytadan tashlang.</p>
+</section>`;
+
+document.getElementById("add").addEventListener("click", () => {
+  const ta = document.getElementById("paste"), msg = document.getElementById("msg");
+  const { ok, bad } = parseCodes(ta.value);
+  const have = new Set(codes.map(c => parseCodes(c).ok[0]?.key));
+  const fresh = ok.filter(r => !have.has(r.key) && have.add(r.key));
+  codes = codes.concat(fresh.map(r => r.code)); lsSet("dfk_codes", JSON.stringify(codes));
+  msg.className = "msg" + (bad.length || !ok.length ? " err" : "");
+  msg.textContent = !ok.length && !bad.length ? "Kod topilmadi. DFK. bilan boshlanadigan kodni tashlang."
+    : `${fresh.length} ta yangi natija qo‘shildi` + (ok.length-fresh.length ? `, ${ok.length-fresh.length} tasi oldin qo‘shilgan` : "")
+      + (bad.length ? `, ${bad.length} ta kod noto‘g‘ri yoki o‘zgartirilgan` : "") + ".";
+  if (fresh.length) ta.value = "";
+  paint();
+});
+function clearBtn(){
+  const box = document.getElementById("clr");
+  box.innerHTML = `<button class="ghost danger" id="clear">Hammasini tozalash</button>`;
+  document.getElementById("clear").addEventListener("click", () => {
+    box.innerHTML = `<span class="msg">Barcha natijalar o‘chiriladi.</span><button class="ghost danger" id="yes">Ha, o‘chirish</button><button class="ghost" id="no">Bekor qilish</button>`;
+    document.getElementById("no").addEventListener("click", clearBtn);
+    document.getElementById("yes").addEventListener("click", () => { codes = []; lsSet("dfk_codes","[]"); clearBtn(); paint(); });
+  });
+}
+function paint(){
+  const best = new Map();
+  for (const r of codes.map(c => parseCodes(c).ok[0]).filter(Boolean)){
+    const k = r.name.trim().toLowerCase(), p = best.get(k);
+    if (!p || r.correct > p.correct || (r.correct === p.correct && r.secs < p.secs)) best.set(k, r);
+  }
+  const list = [...best.values()].sort((a,b) => b.correct - a.correct || a.secs - b.secs);
+  const avg = list.length ? list.reduce((s,r) => s + r.correct/r.total, 0)/list.length : 0;
+  document.getElementById("st").innerHTML = `
+    <div class="stat"><b>${list.length}</b><span>ishtirokchi</span></div>
+    <div class="stat"><b>${Math.round(avg*100)}%</b><span>o‘rtacha to‘g‘ri</span></div>
+    <div class="stat"><b>${list[0] ? list[0].correct + "/" + list[0].total : "—"}</b><span>eng yaxshi natija</span></div>`;
+  document.getElementById("tb").innerHTML = !list.length
+    ? `<div class="note">Hali natija yo‘q. Kursdoshlaringiz yuborgan kodlarni yuqoriga tashlang.</div>`
+    : `<table><thead><tr><th>#</th><th>Ism</th><th>To‘g‘ri</th><th>Vaqt</th><th>Baho</th></tr></thead><tbody>${list.map((r,k)=>`
+      <tr><td>${k+1}</td><td class="nm">${esc(r.name)}</td><td><b>${r.correct}/${r.total}</b></td><td>${fmt(r.secs)}</td><td>${grade(r.correct, r.total)}</td></tr>`).join("")}</tbody></table>
+      <p class="hint">Teng natijada tezroq ishlagan yuqorida turadi. Bir kishi bir necha marta ishlasa, eng yaxshi natijasi olinadi.</p>`;
+}
+clearBtn(); paint();
+</script>
+</body>
+</html>

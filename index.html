@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Defektologiya testi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-screen quiz stage — top bar with progress/timer, question card, 2x2 answer tiles. Single committed dark "game hall" look. */
+:root{
+  --bg:#141a2e; --bg2:#1d2541; --panel:#232c4d; --line:#34406b;
+  --fg:#f4f2ff; --muted:#a6aed0; --accent:#ffd43b;
+  --a:#e5484d; --b:#2f80ed; --c:#f2a516; --d:#2fa35a;
+  --ok:#2fa35a; --bad:#e5484d;
+  --display:"Unbounded",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45}
+.wrap{min-height:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px;
+  padding-block:20px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box}
+h1,h2{font-family:var(--display);text-wrap:balance;margin:0}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+/* start */
+.hero{display:flex;flex-direction:column;gap:14px;padding-top:4vh}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.hero h1{font-size:clamp(30px,8vw,52px);font-weight:900;line-height:1.05}
+.hero p{color:var(--muted);margin:0;max-width:52ch}
+.facts{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;color:var(--muted)}
+.chip b{color:var(--fg)}
+.join{display:flex;flex-direction:column;gap:10px;background:var(--panel);border-radius:18px;padding:18px;margin-top:6px}
+.join label{font-weight:600;font-size:14px;color:var(--muted)}
+.join input{font:600 20px var(--body);padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--fg);width:100%;box-sizing:border-box}
+.big{font:700 18px var(--display);padding:16px 20px;border:0;border-radius:14px;background:var(--accent);color:#1a1400;box-shadow:0 5px 0 #b8941a}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 #b8941a}
+.big:disabled{opacity:.45;cursor:not-allowed}
+.hint{font-size:13px;color:var(--muted)}
+
+/* play */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+.qnum{font:700 15px var(--display)}
+.score{font-weight:700;background:var(--bg2);border-radius:999px;padding:6px 12px}
+.timer{position:relative;height:10px;background:var(--bg2);border-radius:99px;overflow:hidden}
+.timer i{position:absolute;inset:0 auto 0 0;width:100%;background:var(--accent);border-radius:99px;transition:width .25s linear}
+.timer.low i{background:var(--bad)}
+.secs{font:900 28px var(--display);text-align:center;font-variant-numeric:tabular-nums}
+.qcard{background:var(--fg);color:#141a2e;border-radius:18px;padding:22px 20px;font:600 clamp(19px,4.6vw,24px)/1.3 var(--body);text-wrap:balance;min-height:90px;display:flex;align-items:center}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.answers{grid-template-columns:1fr}}
+.ans{display:flex;align-items:center;gap:12px;text-align:left;border:0;border-radius:14px;padding:16px 14px;min-height:72px;color:#fff;font:600 16px/1.3 var(--body);box-shadow:0 5px 0 rgba(0,0,0,.35);transition:opacity .2s,transform .1s}
+.ans:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.ans span{min-width:0}
+.ans svg{flex:none;width:28px;height:28px;fill:#fff}
+.ans[data-k="A"]{background:var(--a)} .ans[data-k="B"]{background:var(--b)}
+.ans[data-k="C"]{background:var(--c)} .ans[data-k="D"]{background:var(--d)}
+.ans.dim{opacity:.28}
+.ans.right{outline:4px solid #fff;outline-offset:-4px}
+.ans:disabled{cursor:default}
+.feedback{border-radius:14px;padding:14px 16px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.feedback.ok{background:var(--ok)} .feedback.bad{background:var(--bad)}
+.feedback button{font:700 15px var(--body);border:0;border-radius:10px;padding:10px 16px;background:#fff;color:#141a2e}
+
+/* end */
+.result{background:var(--panel);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px;text-align:center}
+.result .pts{font:900 clamp(44px,13vw,72px) var(--display);color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.result .who{font:700 20px var(--display)}
+.result .sub{color:var(--muted)}
+.grade{align-self:center;background:var(--bg);border-radius:999px;padding:6px 14px;font-weight:700}
+.sec h2{font-size:17px;margin-bottom:10px}
+.board{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.board li{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;background:var(--bg2);border-radius:12px;padding:10px 14px;font-variant-numeric:tabular-nums}
+.board li.me{background:var(--line);outline:2px solid var(--accent)}
+.board .rk{font:700 15px var(--display);color:var(--muted)}
+.board li:nth-child(1) .rk{color:var(--accent)}
+.board .nm{min-width:0;overflow-wrap:anywhere;font-weight:600}
+.board .pt{font-weight:700}
+.board .ct{font-size:12px;color:var(--muted);font-weight:500}
+.note{background:var(--bg2);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;color:var(--muted);font-size:14px}
+.review{display:flex;flex-direction:column;gap:8px}
+.rv{background:var(--bg2);border-radius:12px;padding:12px 14px;border-left:4px solid var(--bad)}
+.rv p{margin:0 0 4px;font-weight:600}
+.rv small{color:var(--muted);display:block}
+.rv small b{color:var(--ok)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.ghost{font:600 15px var(--body);border:2px solid var(--line);background:transparent;color:var(--fg);border-radius:12px;padding:12px 16px}
+.codebox{background:var(--bg2);border:2px solid var(--accent);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.codebox code{font:600 13px/1.4 ui-monospace,Menlo,Consolas,monospace;word-break:break-all;user-select:all;color:var(--fg)}
+.codebox .row button{flex:1}
+.copy{font:700 15px var(--body);border:0;border-radius:10px;padding:12px 16px;background:var(--accent);color:#1a1400}
+.admin textarea{width:100%;box-sizing:border-box;min-height:110px;font:500 13px ui-monospace,Menlo,Consolas,monospace;padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--bg2);border-radius:12px;padding:12px;font-variant-numeric:tabular-nums}
+.stat b{display:block;font:900 24px var(--display);color:var(--accent)}
+.stat span{font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.tbl th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px 8px;border-bottom:1px solid var(--line)}
+.tbl td.nm{overflow-wrap:anywhere}
+.src{font-size:11px;color:var(--muted)}
+.msg{font-size:14px;color:var(--muted)}
+.msg.err{color:#ff8b8e}
+.danger{border-color:var(--bad);color:#ff8b8e}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.clock{font:900 22px var(--display);font-variant-numeric:tabular-nums;background:var(--bg2);border-radius:999px;padding:6px 14px}
+.clock.low{background:var(--bad)}
+.dots{display:flex;flex-wrap:wrap;gap:5px}
+.dots i{width:14px;height:6px;border-radius:9px;background:var(--bg2)}
+.dots i.ok{background:var(--ok)} .dots i.bad{background:var(--bad)} .dots i.now{background:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const QUESTIONS = [
+ ["Defektologiya fani nimani o‘rganadi?",["Faqat sog‘lom bolalar tarbiyasini","Rivojlanishida turli o‘ziga xosliklari bo‘lgan shaxslarni o‘qitish va tarbiyalashni","Faqat kattalar psixologiyasini","Tabiat hodisalarini"],"B"],
+ ["“Defektologiya” atamasi qaysi tushunchalar bilan bog‘liq?",["Ta’lim va sport","Tibbiyot va kimyo","Rivojlanishdagi nuqsonlarni o‘rganish va korreksion pedagogika","Iqtisodiyot va huquq"],"C"],
+ ["Qadimgi davrlarda nogironligi bo‘lgan insonlarga munosabat qanday bo‘lgan?",["Hamma joyda bir xil va ijobiy","Ko‘pincha salbiy va kamsituvchi","Faqat ilmiy asoslangan","Faqat kasbiy ta’limga yo‘naltirilgan"],"B"],
+ ["Eshitishida nuqsoni bo‘lgan bolalarni o‘qitish tarixida muhim o‘rin tutgan pedagog kim?",["Pedro Ponce de León","Isaak Nyuton","Charlz Darvin","Albert Eynshteyn"],"A"],
+ ["Pedro Ponce de León asosan qaysi yo‘nalishda tarixda tanilgan?",["Ko‘r bolalarni o‘qitish","Eshitmaydigan bolalarni o‘qitish","Jismoniy tarbiya","Matematika"],"B"],
+ ["Ko‘zi ojiz insonlar ta’limi tarixida muhim ahamiyatga ega bo‘lgan Brayl yozuvini kim yaratgan?",["Jan Itar","Lui Brayl","Eduard Segan","Mariya Montessori"],"B"],
+ ["Lui Brayl yozuvi nimaga asoslangan?",["Rangli belgilar","Tovushli signallar","Barmoqlar bilan seziladigan bo‘rtma nuqtalar","Rasmlar"],"C"],
+ ["Jan-Marc Gaspard Itar qaysi ish bilan mashhur?",["Yovvoyi bola Viktor bilan olib borgan ta’limiy ishlari","Brayl yozuvini yaratgani","Birinchi universitetni ochgani","Eshitish apparatini yaratgani"],"A"],
+ ["Eduard Segan qaysi sohaning rivojlanishiga hissa qo‘shgan?",["Maxsus ta’lim va intellektual rivojlanishida qiyinchiliklari bo‘lgan bolalar ta’limi","Astronomiya","Geografiya","Bank ishi"],"A"],
+ ["Mariya Montessori pedagogikasi nimaga alohida e’tibor beradi?",["Faqat yodlashga","Bolaning mustaqilligi va individual rivojlanishiga","Faqat jismoniy mashqlarga","Faqat imtihonlarga"],"B"],
+ ["Defektologiyaning rivojlanishida XIX asr qanday ahamiyatga ega?",["Maxsus ta’lim muassasalari va usullarining rivojlanishi kuchaydi","Ta’lim butunlay to‘xtadi","Barcha maxsus maktablar yopildi","Faqat oliy ta’lim rivojlandi"],"A"],
+ ["Defektologiyaning zamonaviy rivojlanishida qaysi yondashuv muhim?",["Bolalarni ta’limdan chetlatish","Barcha bolalarga bir xil talab qo‘yish","Inklyuziv ta’lim va individual yondashuv","Faqat tibbiy davolash"],"C"],
+ ["Inklyuziv ta’limning asosiy maqsadi nima?",["Ayrim bolalarni alohida cheklash","Barcha bolalar uchun teng ta’lim imkoniyatini yaratish","Faqat iqtidorli bolalarni o‘qitish","Ta’lim muddatini qisqartirish"],"B"],
+ ["Hozirgi pedagogikada “defektologiya” bilan bog‘liq keng qo‘llanadigan atamalardan biri qaysi?",["Maxsus pedagogika","Geologiya","Menejment","Astronomiya"],"A"],
+ ["Maxsus pedagogikaning asosiy vazifalaridan biri nima?",["Bolalarni jamiyatdan ajratish","Rivojlanish xususiyatlarini hisobga olib ta’lim va tarbiyani tashkil etish","Faqat tashxis qo‘yish","Faqat nazariy ma’lumot berish"],"B"]
+];
+const PER = 30, KEYS = ["A","B","C","D"];
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const SALT = "dfk-trast-2026";
+function hsh(s){ let h = 2166136261; for (const c of s + SALT){ h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h>>>0).toString(36); }
+function fmt(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0"); }
+function grade(c, t){ const p = c/(t||QUESTIONS.length); return p>=.9 ? "A’lo" : p>=.7 ? "Yaxshi" : p>=.5 ? "Qoniqarli" : "Yana takrorlang"; }
+function lsGet(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : v; } catch(e){ return d; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+
+const SHAPES = {
+ A:'<svg viewBox="0 0 24 24"><path d="M12 3 22 20H2z"/></svg>',
+ B:'<svg viewBox="0 0 24 24"><path d="M12 2 22 12 12 22 2 12z"/></svg>',
+ C:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>',
+ D:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>'
+};
+let S = null, tick = null;
+
+function makeCode(m){
+  const p = [m.name, m.correct, m.total, m.secs, m.ts].join("|");
+  const b = btoa(unescape(encodeURIComponent(p))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return "DFK." + b + "." + hsh(p);
+}
+
+function start(){
+  clearInterval(tick);
+  app.innerHTML = `
+  <section class="hero">
+    <div class="eyebrow">Mavzu bo‘yicha test</div>
+    <h1>Defektologiya: tarix va asosiy tushunchalar</h1>
+    <p>Ponce de Léondan inklyuziv ta’limgacha. Har bir javobdan keyin to‘g‘ri variantni ko‘rasiz.</p>
+    <div class="facts">
+      <span class="chip"><b>${QUESTIONS.length}</b> ta savol</span>
+      <span class="chip">Har bir savolga <b>${PER}</b> soniya</span>
+    </div>
+    <form class="join" id="f">
+      <label for="nm">Ism va familiyangiz</label>
+      <input id="nm" maxlength="40" autocomplete="name" placeholder="Masalan, Madina Karimova" value="${esc(lsGet("dfk_name",""))}">
+      <button class="big" id="go" type="submit">Boshlash</button>
+      <span class="hint">Test oxirida natija kodi chiqadi, uni Telegramda yuborasiz.</span>
+    </form>
+  </section>`;
+  const nm = document.getElementById("nm"), go = document.getElementById("go");
+  const chk = () => go.disabled = nm.value.trim().length < 2; chk();
+  nm.addEventListener("input", chk);
+  document.getElementById("f").addEventListener("submit", e => {
+    e.preventDefault(); if (go.disabled) return;
+    S = { name:nm.value.trim(), i:0, correct:0, marks:[], wrong:[], locked:false, t0:Date.now(),
+          order:QUESTIONS.map((_,k)=>k).sort(()=>Math.random()-.5), done:false, used:0, qt0:0 };
+    lsSet("dfk_name", S.name);
+    question();
+  });
+}
+
+function left(){ return PER - (Date.now()-S.qt0)/1000; }
+function clock(){
+  const l = Math.max(0, left());
+  const c = document.getElementById("clk"), bar = document.getElementById("ti");
+  if (c){ c.textContent = Math.ceil(l); c.classList.toggle("low", l < 8); }
+  if (bar){ bar.style.width = (l/PER*100) + "%"; document.getElementById("tb").classList.toggle("low", l < 8); }
+  if (l <= 0) answer(null);
+}
+
+function question(){
+  const q = QUESTIONS[S.order[S.i]];
+  S.locked = false;
+  app.innerHTML = `
+  <div class="bar"><span class="qnum">${S.i+1} / ${QUESTIONS.length}</span><span class="clock" id="clk" aria-label="Qolgan soniya">${PER}</span></div>
+  <div class="timer" id="tb"><i id="ti"></i></div>
+  <div class="dots">${QUESTIONS.map((_,k)=>`<i class="${S.marks[k]||(k===S.i?"now":"")}"></i>`).join("")}</div>
+  <div class="qcard">${esc(q[0])}</div>
+  <div class="answers">${q[1].map((t,k)=>`<button class="ans" data-k="${KEYS[k]}">${SHAPES[KEYS[k]]}<span>${esc(t)}</span></button>`).join("")}</div>
+  <div id="fb"></div>`;
+  app.querySelectorAll(".ans").forEach(b => b.addEventListener("click", () => answer(b.dataset.k)));
+  S.qt0 = Date.now(); clearInterval(tick); tick = setInterval(clock, 200);
+}
+
+function answer(k){
+  if (S.locked || S.done) return; S.locked = true; clearInterval(tick);
+  S.used += Math.min(PER, (Date.now()-S.qt0)/1000);
+  const q = QUESTIONS[S.order[S.i]], ok = k === q[2];
+  if (ok) S.correct++; else S.wrong.push({ q:q[0], yours:k ? q[1][KEYS.indexOf(k)] : null, right:q[1][KEYS.indexOf(q[2])] });
+  S.marks[S.i] = ok ? "ok" : "bad";
+  app.querySelectorAll(".ans").forEach(b => { b.disabled = true; b.classList.add(b.dataset.k === q[2] ? "right" : "dim"); });
+  const last = S.i === QUESTIONS.length-1;
+  document.getElementById("fb").innerHTML = `<div class="feedback ${ok?"ok":"bad"}"><span>${ok?"To‘g‘ri!":(k?"Noto‘g‘ri":"Vaqt tugadi")}</span><button id="nx">${last?"Natijani ko‘rish":"Keyingi savol"}</button></div>`;
+  const nx = document.getElementById("nx"); nx.focus({preventScroll:true});
+  nx.addEventListener("click", () => { if (last) finish(); else { S.i++; question(); } });
+}
+
+function finish(){
+  if (S.done) return; S.done = true; clearInterval(tick);
+  const timeout = false;
+  const secs = Math.round(S.used);
+  const m = { name:S.name, correct:S.correct, total:QUESTIONS.length, secs, ts:Math.floor(Date.now()/1000) };
+  const code = makeCode(m);
+  app.innerHTML = `
+  <div class="result">
+    <div class="eyebrow">${timeout ? "Vaqt tugadi" : "Test yakunlandi"}</div>
+    <div class="who">${esc(m.name)}</div>
+    <div class="pts">${m.correct}/${m.total}</div>
+    <div class="sub">to‘g‘ri javob · sarflangan vaqt ${fmt(secs)}</div>
+    <span class="grade">${grade(m.correct)}</span>
+  </div>
+  <section class="codebox">
+    <h2 style="font-size:16px">Natija kodingiz</h2>
+    <span class="hint">Kodni nusxalab, testni tuzgan kursdoshingizga Telegramda yuboring. Natija faqat shu kod orqali hisobga olinadi.</span>
+    <code id="code">${code}</code>
+    <div class="row"><button class="copy" id="cp">Kodni nusxalash</button></div>
+  </section>
+  ${S.wrong.length ? `<section class="sec"><h2>Xatolar ustida ishlash</h2><div class="review">${S.wrong.map(w=>`
+    <div class="rv"><p>${esc(w.q)}</p>
+      <small>Sizning javobingiz: ${w.yours?esc(w.yours):"javob berilmadi"}</small>
+      <small>To‘g‘ri javob: <b>${esc(w.right)}</b></small></div>`).join("")}</div></section>`
+    : `<div class="note">Barcha savollarga to‘g‘ri javob berdingiz. Zo‘r!</div>`}
+  <div class="row"><button class="ghost" id="again">Qaytadan ishlash</button></div>`;
+  document.getElementById("again").addEventListener("click", start);
+  document.getElementById("cp").addEventListener("click", e => {
+    const btn = e.currentTarget, el = document.getElementById("code");
+    const sel = () => { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Belgilandi, endi nusxalang"; };
+    try { navigator.clipboard.writeText(code).then(() => { btn.textContent = "Nusxalandi"; }, sel); } catch(err){ sel(); }
+  });
+}
+start();
+</script>
+</body>
+</html>
