@@ -174,7 +174,7 @@ function start(){
       <label for="nm">Ism va familiyangiz</label>
       <input id="nm" maxlength="40" autocomplete="name" placeholder="Masalan, Madina Karimova" value="${esc(lsGet("dfk_name",""))}">
       <button class="big" id="go" type="submit">Boshlash</button>
-      <span class="hint">Test oxirida natija kodi chiqadi, uni Telegramda yuborasiz.</span>
+      <span class="hint">Test faqat bir marta ishlanadi. Boshlagandan keyin sahifani yangilasangiz, ochiq turgan savol "vaqt tugadi" deb hisoblanadi. Oxirida natija kodi chiqadi, uni Telegramda yuborasiz.</span>
     </form>
   </section>`;
   const nm = document.getElementById("nm"), go = document.getElementById("go");
@@ -185,10 +185,16 @@ function start(){
     S = { name:nm.value.trim(), i:0, correct:0, marks:[], wrong:[], locked:false, t0:Date.now(),
           order:QUESTIONS.map((_,k)=>k).sort(()=>Math.random()-.5), done:false, used:0, qt0:0 };
     lsSet("dfk_name", S.name);
+    save();
     question();
   });
 }
 
+function save(){ lsSet("dfk_state", JSON.stringify(S)); }
+function resume(){
+  if (S.marks[S.i]) { if (S.i === QUESTIONS.length-1) { finish(); return; } S.i++; question(); return; }
+  question(); answer(null);
+}
 function left(){ return PER - (Date.now()-S.qt0)/1000; }
 function clock(){
   const l = Math.max(0, left());
@@ -218,6 +224,7 @@ function answer(k){
   const q = QUESTIONS[S.order[S.i]], ok = k === q[2];
   if (ok) S.correct++; else S.wrong.push({ q:q[0], yours:k ? q[1][KEYS.indexOf(k)] : null, right:q[1][KEYS.indexOf(q[2])] });
   S.marks[S.i] = ok ? "ok" : "bad";
+  save();
   app.querySelectorAll(".ans").forEach(b => { b.disabled = true; b.classList.add(b.dataset.k === q[2] ? "right" : "dim"); });
   const last = S.i === QUESTIONS.length-1;
   document.getElementById("fb").innerHTML = `<div class="feedback ${ok?"ok":"bad"}"><span>${ok?"To‘g‘ri!":(k?"Noto‘g‘ri":"Vaqt tugadi")}</span><button id="nx">${last?"Natijani ko‘rish":"Keyingi savol"}</button></div>`;
@@ -227,13 +234,18 @@ function answer(k){
 
 function finish(){
   if (S.done) return; S.done = true; clearInterval(tick);
-  const timeout = false;
-  const secs = Math.round(S.used);
-  const m = { name:S.name, correct:S.correct, total:QUESTIONS.length, secs, ts:Math.floor(Date.now()/1000) };
-  const code = makeCode(m);
+  const m = { name:S.name, correct:S.correct, total:QUESTIONS.length, secs:Math.round(S.used), ts:Math.floor(Date.now()/1000) };
+  const R = { m, code:makeCode(m), wrong:S.wrong };
+  lsSet("dfk_done", JSON.stringify(R));
+  showResult(R, false);
+}
+
+function showResult(R, again){
+  const m = R.m, code = R.code, secs = m.secs;
   app.innerHTML = `
+  ${again ? `<div class="note">Siz bu testni allaqachon ishlagansiz. Test faqat bir marta ishlanadi, quyida natijangiz.</div>` : ""}
   <div class="result">
-    <div class="eyebrow">${timeout ? "Vaqt tugadi" : "Test yakunlandi"}</div>
+    <div class="eyebrow">Test yakunlandi</div>
     <div class="who">${esc(m.name)}</div>
     <div class="pts">${m.correct}/${m.total}</div>
     <div class="sub">to‘g‘ri javob · sarflangan vaqt ${fmt(secs)}</div>
@@ -245,20 +257,25 @@ function finish(){
     <code id="code">${code}</code>
     <div class="row"><button class="copy" id="cp">Kodni nusxalash</button></div>
   </section>
-  ${S.wrong.length ? `<section class="sec"><h2>Xatolar ustida ishlash</h2><div class="review">${S.wrong.map(w=>`
+  ${R.wrong.length ? `<section class="sec"><h2>Xatolar ustida ishlash</h2><div class="review">${R.wrong.map(w=>`
     <div class="rv"><p>${esc(w.q)}</p>
       <small>Sizning javobingiz: ${w.yours?esc(w.yours):"javob berilmadi"}</small>
       <small>To‘g‘ri javob: <b>${esc(w.right)}</b></small></div>`).join("")}</div></section>`
-    : `<div class="note">Barcha savollarga to‘g‘ri javob berdingiz. Zo‘r!</div>`}
-  <div class="row"><button class="ghost" id="again">Qaytadan ishlash</button></div>`;
-  document.getElementById("again").addEventListener("click", start);
+    : `<div class="note">Barcha savollarga to‘g‘ri javob berdingiz. Zo‘r!</div>`}`;
   document.getElementById("cp").addEventListener("click", e => {
     const btn = e.currentTarget, el = document.getElementById("code");
     const sel = () => { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Belgilandi, endi nusxalang"; };
     try { navigator.clipboard.writeText(code).then(() => { btn.textContent = "Nusxalandi"; }, sel); } catch(err){ sel(); }
   });
 }
-start();
+(function boot(){
+  let R = null, st = null;
+  try { R = JSON.parse(lsGet("dfk_done","null")); } catch(e){}
+  if (R && R.m) { showResult(R, true); return; }
+  try { st = JSON.parse(lsGet("dfk_state","null")); } catch(e){}
+  if (st && st.order && !st.done) { S = st; S.locked = false; resume(); return; }
+  start();
+})();
 </script>
 </body>
 </html>

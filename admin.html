@@ -202,7 +202,8 @@ function paint(){
   const best = new Map();
   for (const r of codes.map(c => parseCodes(c).ok[0]).filter(Boolean)){
     const k = r.name.trim().toLowerCase(), p = best.get(k);
-    if (!p || r.correct > p.correct || (r.correct === p.correct && r.secs < p.secs)) best.set(k, r);
+    if (!p) best.set(k, { ...r, tries:1 });
+    else { p.tries++; if (r.ts < p.ts) best.set(k, { ...r, tries:p.tries }); }
   }
   const list = [...best.values()].sort((a,b) => b.correct - a.correct || a.secs - b.secs);
   const avg = list.length ? list.reduce((s,r) => s + r.correct/r.total, 0)/list.length : 0;
@@ -213,8 +214,8 @@ function paint(){
   document.getElementById("tb").innerHTML = !list.length
     ? `<div class="note">Hali natija yo‘q. Kursdoshlaringiz yuborgan kodlarni yuqoriga tashlang.</div>`
     : `<table><thead><tr><th>#</th><th>Ism</th><th>To‘g‘ri</th><th>Vaqt</th><th>Baho</th></tr></thead><tbody>${list.map((r,k)=>`
-      <tr><td>${k+1}</td><td class="nm">${esc(r.name)}</td><td><b>${r.correct}/${r.total}</b></td><td>${fmt(r.secs)}</td><td>${grade(r.correct, r.total)}</td></tr>`).join("")}</tbody></table>
-      <p class="hint">Teng natijada tezroq ishlagan yuqorida turadi. Bir kishi bir necha marta ishlasa, eng yaxshi natijasi olinadi.</p>`;
+      <tr><td>${k+1}</td><td class="nm">${esc(r.name)}${r.tries > 1 ? ` <span class="src" style="color:#ff8b8e">${r.tries} marta</span>` : ""}</td><td><b>${r.correct}/${r.total}</b></td><td>${fmt(r.secs)}</td><td>${grade(r.correct, r.total)}</td></tr>`).join("")}</tbody></table>
+      <p class="hint">Teng natijada tezroq ishlagan yuqorida turadi. Bir kishi bir necha marta yuborsa, faqat birinchi urinishi hisoblanadi va yonida necha marta yuborgani ko‘rsatiladi.</p>`;
 }
 clearBtn(); paint();
 </script>
